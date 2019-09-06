@@ -235,7 +235,23 @@ def subsequencing(df):
             counter = i + 1
     return dflist
  
+def outputreshaper(y,N=6):
+    totalArray = []
+    m, n = y.shape
 
+    for i in range(N):
+        # copying
+        temp = np.copy(y)
+        # shifting
+        temp = temp[i:m + i - N + 1, :]
+        # appending
+        totalArray.append(temp)
+
+    # reshaping collated array to (samples, time_steps, dimensions)
+    collatedArray = np.concatenate(totalArray, axis=1)
+    y_reshaped = collatedArray.reshape((collatedArray.shape[0], N, n))
+
+    return y_reshaped
  
 
 
