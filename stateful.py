@@ -115,7 +115,6 @@ for i in tests_X:
 for i in tests_y:
     print(i.shape)
 
-
 #possible regularization strategies#################################
 regularizers =  L1L2(l1=0.01, l2=0.001)#l1l2
 
@@ -124,7 +123,7 @@ input_layer = Input(batch_shape=(batch_size,halfhours,inputfeatures), name='inpu
 reshape_layer = Reshape((halfhours*inputfeatures,),name='reshape_layer')(input_layer)
 num_op = outputsequence # ie we want to predict only 1 output
 repeater = RepeatVector(num_op, name='repeater')(reshape_layer)
-LSTM_layer = LSTM(5, name='LSTM_layer', return_sequences=True, stateful=True, recurrent_regularizer=regularizer)(repeater)
+LSTM_layer = LSTM(5, name='LSTM_layer', return_sequences=True, stateful=True, recurrent_regularizer=regularizers)(repeater)
 output_layer = Dense(1, name='output_layer')(LSTM_layer)
 # #output_layer = TimeDistributed(Dense(outputsequence, kernel_initializer='glorot_normal',  activation='relu'), name='output_layer')(LSTM_layer)
 model = Model(inputs=input_layer, outputs=output_layer)
@@ -133,40 +132,50 @@ model.compile(loss='mae', optimizer='adam')
 # fit network backpropagating the sequences batch wise
 noepochs=150
 for i in range(len(trains_X)):
-    model.fit(np.array(trains_X[i]), np.array(trains_y[i]), epochs=noepochs, batch_size=batch_size, validation_data=(tests_X[i], tests_y[i]) , verbose=2, shuffle=False)
+    model.fit(np.array(trains_X[i]), np.array(trains_y[i]), epochs=noepochs, batch_size=batch_size,
+     validation_data=(tests_X[i], tests_y[i]) , verbose=2, shuffle=False)
     model.reset_states()
 
 ##saving the model
 rp.save_model(model)
 
 ##testing with the test and entire dataset prediction##############################################
-test_pred = []
-yhat,yhattest=[],[]
-y,ytest=[],[]
+# test_pred = []
+# yhat,yhattest=[],[]
+# y,ytest=[],[]
+# model.reset_states()
+# for i in range(len(trains_X)):
+#     y1= model.predict(np.array(trains_X[i]), batch_size=batch_size)
+#     y2= model.predict(np.array(tests_X[i]), batch_size=batch_size)
+#     model.reset_states()
+#     sequence=np.vstack((y1,y2 ))
+#     truesequence=np.hstack(([trains_y[i],] ,[tests_y[i],]  ))
+
+#     if i>0:
+#         yhat=np.vstack((yhat,sequence ))
+#         y=np.hstack((y ,truesequence  ))
+#         yhattest=np.vstack((yhattest,y2 ))
+#         ytest=np.hstack((ytest ,tests_y[i]  ))
+#     else:
+#         yhat=sequence
+#         y=truesequence
+#         yhattest=y2
+#         ytest=tests_y[i]
+
+test_pred = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
+train_pred = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
 model.reset_states()
 for i in range(len(trains_X)):
-    y1= model.predict(np.array(trains_X[i]), batch_size=batch_size)
-    y2= model.predict(np.array(tests_X[i]), batch_size=batch_size)
+    train_pred.append(model.predict(np.array(trains_X[i]), batch_size=batch_size))
+    test_pred.append(model.predict(np.array(tests_X[i]), batch_size=batch_size))
     model.reset_states()
-    sequence=np.vstack((y1,y2 ))
-    truesequence=np.hstack(([trains_y[i],] ,[tests_y[i],]  ))
 
-    if i>0:
-        yhat=np.vstack((yhat,sequence ))
-        y=np.hstack((y ,truesequence  ))
-        yhattest=np.vstack((yhattest,y2 ))
-        ytest=np.hstack((ytest ,tests_y[i]  ))
-    else:
-        yhat=sequence
-        y=truesequence
-        yhattest=y2
-        ytest=tests_y[i]
+train_pred = np.concatenate(trains_y,axis=0)
+#Calculating error across each future timestep in line with the following famous post
+#https://machinelearningmastery.com/multi-step-time-series-forecasting-long-short-term-memory-networks-python/
 
-##### test errors
-test_pred_continuous= yhattest
-test_y_continuous= ytest.T
-all_pred_continuous= yhat
-all_y_continuous= y.T
+
+
 
 rmsetest = sqrt(mean_squared_error(test_y_continuous, test_pred_continuous))
 print('Test RMSE: %.3f' % rmsetest)
