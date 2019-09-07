@@ -16,6 +16,7 @@ from keras.models import Model
 from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, RepeatVector
 from keras.initializers import glorot_normal
 from keras.optimizers import Adam
+from keras.regularizers import L1L2
 
 
 #read the data set
