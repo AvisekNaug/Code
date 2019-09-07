@@ -234,25 +234,45 @@ def subsequencing(df):
             dflist.append(df.iloc[counter:(i + 1), :])
             counter = i + 1
     return dflist
- 
-def outputreshaper(y,N=6):
-    totalArray = []
-    m, n = y.shape
 
-    for i in range(N):
+def inputreshaper(X, time_steps=6,N=6):
+    totalArray = []
+    m, n = X.shape
+
+    for i in range(time_steps):
         # copying
-        temp = np.copy(y)
+        temp = np.copy(X)
         # shifting
-        temp = temp[i:m + i - N + 1, :]
+        temp = temp[i:m + i - time_steps + 1, :]
         # appending
         totalArray.append(temp)
 
     # reshaping collated array to (samples, time_steps, dimensions)
     collatedArray = np.concatenate(totalArray, axis=1)
-    y_reshaped = collatedArray.reshape((collatedArray.shape[0], N, n))
+    X_reshaped = collatedArray.reshape((collatedArray.shape[0], time_steps, n))
+    X_reshaped = X_reshaped[0:1-N,:,:]#We are removing last N-1 data due to predicting sequence of length N
+
+    return X_reshaped
+
+def outputreshaper(y,N=6):
+    totalArray = []
+    m = y.shape[0]#since y is (m, )
+
+    for i in range(N):
+        # copying
+        temp = np.copy(y)
+        # shifting
+        temp = temp[i : m + i - N + 1]
+        # appending
+        totalArray.append(temp.reshape(-1,1))#reshaping needed for concatenating along axis=1
+
+    # reshaping collated array to (samples, time_steps)
+    collatedArray = np.concatenate(totalArray, axis=1)
+    y_reshaped = collatedArray.reshape((collatedArray.shape[0], N))
 
     return y_reshaped
- 
+
+
 
 
 
