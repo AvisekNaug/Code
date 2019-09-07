@@ -180,7 +180,7 @@ for i in range(outputfeatures):
 for i in range(len(train_plot)):
 	matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
 	fig, axs = plt.subplots(outputsequence, 1)
-	for j in range(outputsequence)
+	for j in range(outputsequence):
 		#plot predicted
 		axs[j,0].plot(train_plot[i][:,j,0],'ro+',label='Actual Energy')
 		#plot target
@@ -198,7 +198,7 @@ for i in range(len(train_plot)):
 for i in range(len(test_plot)):
 	matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
 	fig, axs = plt.subplots(outputsequence, 1)
-	for j in range(outputsequence)
+	for j in range(outputsequence):
 		#plot predicted
 		axs[j,0].plot(test_plot[i][:,j,0],'ro+',label='Actual Energy')
 		#plot target
