@@ -17,12 +17,13 @@ from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, RepeatVe
 from keras.initializers import glorot_normal
 from keras.optimizers import Adam
 from keras.regularizers import L1L2
+import sys
 
-
+timegap = int(sys.argv[1])
 #read the data set
 dataset = read_pickle("Summer_2019_5min.pkl")
 #subsample it to  30min
-dataset = dataset[dataset.index.minute%30==0]
+dataset = dataset[dataset.index.minute%timegap==0]
 
 #remove large outliers
 #dataset=rp.replace_outliers(dataSet,'CoolE')
@@ -49,7 +50,10 @@ dataset = DataFrame(totalvect, columns=dataset.columns, index=dataset.index)
 
 #extract sequences larger than L samples
 outputDFrames=rp.subsequencing(dataset)#rp.continuous_sequencesnan(dataset,sequencelength)
-minimum_seq_length=48 #one day
+if timegap==5:
+	minimum_seq_length=288
+else:
+	minimum_seq_length=48 #one day
 counteri=0
 for i in range(len(outputDFrames)):
     if len(outputDFrames[counteri])<minimum_seq_length:
@@ -170,13 +174,17 @@ for i in range(outputfeatures):
 		rmse = sqrt(mean_squared_error(train_pred[:,j,i],train_target[:,j,i]))
 		cvrmse = 100*(rmse/np.mean(train_target[:,j,i]))
 		mae = mean_absolute_error(train_pred[:,j,i],train_target[:,j,i])
-		print ('Train RMSE={} |Train CVRMES={} |Train MAE={}'.format(rmse,cvrmse,mae))
+		file=  open(str(timegap)+'min Results_File.txt', 'a')
+		file.write('Time Step {}: Train RMSE={} |Train CVRMES={} |Train MAE={} \n'.format(j+1,rmse,cvrmse,mae))
+		file.close()
 
 		#Calculate test error
 		rmse = sqrt(mean_squared_error(test_pred[:,j,i],test_target[:,j,i]))
 		cvrmse = 100*(rmse/np.mean(test_target[:,j,i]))
 		mae = mean_absolute_error(test_pred[:,j,i],test_target[:,j,i])
-		print ('Test RMSE={} |Test CVRMES={} |Test MAE={}'.format(rmse,cvrmse,mae))
+		file=  open(str(timegap)+'min Results_File.txt', 'a')
+		file.write('Time Step {}: Test RMSE={} |Test CVRMES={} |Test MAE={} \n'.format(j+1,rmse,cvrmse,mae))
+		file.close()
 
 #Plotting the pred versus target curve:train
 for i in range(len(train_plot)):
@@ -189,7 +197,7 @@ for i in range(len(train_plot)):
         axs[j].plot(trains_y[i][:,j,0],'go-',label='Actual Energy')
         #Plot Properties
         axs[j].set_title('t+'+str(j+1)+'time step')
-        axs[j].set_xlabel('Time points at 30 mins')
+        axs[j].set_xlabel('Time points at {} mins'.format(timegap))
         axs[j].set_ylabel('Normalized Energy')
         axs[j].grid(which='both',alpha=100)
         axs[j].legend()
@@ -201,13 +209,13 @@ for i in range(len(train_plot)):
     axs[j+1].plot(train_plot[i][:,4,0],'cd-',label='Predicted Energy t+5')
     axs[j+1].plot(train_plot[i][:,5,0],'k*-',label='Predicted Energy t+6')
     axs[j+1].set_title('Energy at 30 minutes differences')
-    axs[j+1].set_xlabel('Time points at 30 mins')
+    axs[j+1].set_xlabel('Time points at {} mins'.format(timegap))
     axs[j+1].set_ylabel('Predicted Normalized Energy')
     axs[j+1].grid(which='both',alpha=100)
     axs[j+1].legend()
     axs[j+1].minorticks_on()
 
-    fig.savefig('Train Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
+    fig.savefig(str(timegap)+'minutes Train Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
 
 #Plotting the pred versus target curve":test
 for i in range(len(test_plot)):
@@ -220,7 +228,7 @@ for i in range(len(test_plot)):
         axs[j].plot(tests_y[i][:,j,0],'go-',label='Actual Energy')
         #Plot Properties
         axs[j].set_title('t+'+str(j+1)+'time step')
-        axs[j].set_xlabel('Time points at 30 mins')
+        axs[j].set_xlabel('Time points at {} mins'.format(timegap))
         axs[j].set_ylabel('Normalized Energy')
         axs[j].grid(which='both',alpha=100)
         axs[j].legend()
@@ -231,14 +239,14 @@ for i in range(len(test_plot)):
     axs[j+1].plot(test_plot[i][:,3,0],'mo-',label='Predicted Energy t+4')
     axs[j+1].plot(test_plot[i][:,4,0],'cd-',label='Predicted Energy t+5')
     axs[j+1].plot(test_plot[i][:,5,0],'k*-',label='Predicted Energy t+6')
-    axs[j+1].set_title('Energy at 30 minutes differences')
+    axs[j+1].set_title('Energy at {} minutes differences'.format(timegap))
     axs[j+1].set_xlabel('Time points at 30 mins')
     axs[j+1].set_ylabel('Predicted Normalized Energy')
     axs[j+1].grid(which='both',alpha=100)
     axs[j+1].legend()
     axs[j+1].minorticks_on()
 
-    fig.savefig('Test Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
+    fig.savefig(str(timegap)+'minutes Test Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
 
 
 
