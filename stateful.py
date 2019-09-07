@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import repository as rp
 from keras.models import Model
-from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, RepeatVector
+from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, RepeatVector, Reshape
 from keras.initializers import glorot_normal
 from keras.optimizers import Adam
 from keras.regularizers import L1L2
