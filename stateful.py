@@ -5,11 +5,11 @@ from pandas import concat
 from pandas import read_csv
 from pandas import datetime
 from pandas import read_pickle
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import MinMaxScaler
 from math import sqrt
 import matplotlib
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 import numpy as np
 import repository as rp
 from keras.models import Model
@@ -99,11 +99,11 @@ outputfeatures=1
 outputsequence = 6
 
 for i in range(len(trains_X)):
-    trains_X[i] = rp.inputreshaper(trains_X[i],halfhours, outputsequence)#(samplesize,1,4)
-    trains_y[i] = rp.outputreshaper(trains_y[i], outputsequence)#(samplesize,6)
+    trains_X[i] = rp.inputreshaper(trains_X[i],halfhours, inputfeatures)#(samplesize,1,4)
+    trains_y[i] = rp.outputreshaper(trains_y[i], outputsequence,outputfeatures)#(samplesize,6,1)
 for i in range(len(tests_X)):
-    tests_X[i] = rp.inputreshaper(tests_X[i],halfhours, outputsequence)#(samplesize,1,4)
-    tests_y[i] = rp.outputreshaper(tests_y[i], outputsequence)#(samplesize,6)
+    tests_X[i] = rp.inputreshaper(tests_X[i],halfhours, inputfeatures)#(samplesize,1,4)
+    tests_y[i] = rp.outputreshaper(tests_y[i], outputsequence,outputfeatures)#(samplesize,6,1)
 
 
 for i in trains_X:
@@ -130,72 +130,94 @@ model = Model(inputs=input_layer, outputs=output_layer)
 model.compile(loss='mae', optimizer='adam')
 
 # fit network backpropagating the sequences batch wise
-noepochs=150
+noepochs=5
 for i in range(len(trains_X)):
     model.fit(np.array(trains_X[i]), np.array(trains_y[i]), epochs=noepochs, batch_size=batch_size,
      validation_data=(tests_X[i], tests_y[i]) , verbose=2, shuffle=False)
     model.reset_states()
 
-##saving the model
-rp.save_model(model)
+#saving the model
+#rp.save_model(model)
 
 ##testing with the test and entire dataset prediction##############################################
-# test_pred = []
-# yhat,yhattest=[],[]
-# y,ytest=[],[]
-# model.reset_states()
-# for i in range(len(trains_X)):
-#     y1= model.predict(np.array(trains_X[i]), batch_size=batch_size)
-#     y2= model.predict(np.array(tests_X[i]), batch_size=batch_size)
-#     model.reset_states()
-#     sequence=np.vstack((y1,y2 ))
-#     truesequence=np.hstack(([trains_y[i],] ,[tests_y[i],]  ))
-
-#     if i>0:
-#         yhat=np.vstack((yhat,sequence ))
-#         y=np.hstack((y ,truesequence  ))
-#         yhattest=np.vstack((yhattest,y2 ))
-#         ytest=np.hstack((ytest ,tests_y[i]  ))
-#     else:
-#         yhat=sequence
-#         y=truesequence
-#         yhattest=y2
-#         ytest=tests_y[i]
-
-test_pred = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
-train_pred = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
+train_plot = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
+test_plot = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
 model.reset_states()
 for i in range(len(trains_X)):
-    train_pred.append(model.predict(np.array(trains_X[i]), batch_size=batch_size))
-    test_pred.append(model.predict(np.array(tests_X[i]), batch_size=batch_size))
+    train_plot.append(model.predict(np.array(trains_X[i]), batch_size=batch_size))
+    test_plot.append(model.predict(np.array(tests_X[i]), batch_size=batch_size))
     model.reset_states()
 
-train_pred = np.concatenate(trains_y,axis=0)
-#Calculating error across each future timestep in line with the following famous post
-#https://machinelearningmastery.com/multi-step-time-series-forecasting-long-short-term-memory-networks-python/
+"""
+Calculating error across each future timestep in line with the following post
+https://machinelearningmastery.com/multi-step-time-series-forecasting-long-short-term-memory-networks-python/
+"""
+
+#concatenating blocks of samples on acis =0 for calclating error along time axis=1
+train_pred = np.concatenate(train_plot,axis=0)
+train_target= np.concatenate(trains_y,axis=0)
+test_pred = np.concatenate(test_plot,axis=0)
+test_target = np.concatenate(tests_y,axis=0)
+
+
+#generalized calc for 3d arrays
+for i in range(outputfeatures):
+	for j in range(outputsequence):
+
+		#Calculate train error
+		rmse = sqrt(mean_squared_error(train_pred[:,j,i],train_target[:,j,i]))
+		cvrmse = 100*(rmse/np.mean(train_target[:,j,i]))
+		mae = mean_absolute_error(train_pred[:,j,i],train_target[:,j,i])
+		print ('Train RMSE={} |Train CVRMES={} |Train MAE={}'.format(rmse,cvrmse,mae))
+
+		#Calculate test error
+		rmse = sqrt(mean_squared_error(test_pred[:,j,i],test_target[:,j,i]))
+		cvrmse = 100*(rmse/np.mean(test_target[:,j,i]))
+		mae = mean_absolute_error(test_pred[:,j,i],test_target[:,j,i])
+		print ('Test RMSE={} |Test CVRMES={} |Test MAE={}'.format(rmse,cvrmse,mae))
+
+#Plotting the pred versus target curve:train
+for i in range(len(train_plot)):
+	matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
+	fig, axs = plt.subplots(outputsequence, 1)
+	for j in range(outputsequence)
+		#plot predicted
+		axs[j,0].plot(train_plot[i][:,j,0],'ro+',label='Actual Energy')
+		#plot target
+		axs[j,0].plot(trains_y[i][:,j,0],'go+',label='Predicted Energy')
+		#Plot Properties
+		axs[j,0].set_title('t+'+str(j+1)+'time step')
+		axs[j,0].xlabel('Time points at 30 mins')
+		axs[j,0].ylabel('Normalized Energy')
+		axs[j,0].grid(which='both',alpha=100)
+		ax.legend('best')
+		axs[j,0].minorticks_on()
+	fig.savefig('Train Energy Comparison on Step t+'+str(i+1)+'.pdf',bbox_inches='tight')
+
+#Plotting the pred versus target curve":test
+for i in range(len(test_plot)):
+	matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
+	fig, axs = plt.subplots(outputsequence, 1)
+	for j in range(outputsequence)
+		#plot predicted
+		axs[j,0].plot(test_plot[i][:,j,0],'ro+',label='Actual Energy')
+		#plot target
+		axs[j,0].plot(tests_y[i][:,j,0],'go+',label='Predicted Energy')
+		#Plot Properties
+		axs[j,0].set_title('t+'+str(j+1)+'time step')
+		axs[j,0].xlabel('Time points at 30 mins')
+		axs[j,0].ylabel('Normalized Energy')
+		axs[j,0].grid(which='both',alpha=100)
+		ax.legend('best')
+		axs[j,0].minorticks_on()
+	fig.savefig('Test Energy Comparison on Step t+'+str(i+1)+'.pdf',bbox_inches='tight')
 
 
 
-
-rmsetest = sqrt(mean_squared_error(test_y_continuous, test_pred_continuous))
-print('Test RMSE: %.3f' % rmsetest)
-print('Test CVRMSE: %.3f' % (rmsetest/np.mean(test_y_continuous)))
-
-mae=abs(test_y_continuous[:,].T- test_pred_continuous[:,].T)
-print('Test MAE: %.3f' % np.mean(mae))
-
-######### all data set errors
-rmsetest = sqrt(mean_squared_error(all_y_continuous, all_pred_continuous))
-print('All RMSE: %.3f' % rmsetest)
-print('All CVRMSE: %.3f' % (rmsetest/np.mean(all_y_continuous)))
-
-mae=abs(all_y_continuous[:,].T- all_pred_continuous[:,].T)
-print('All MAE: %.3f' % np.mean(mae))
-
-pyplot.figure()
-pyplot.plot(all_y_continuous, 'b*-',label='original')
-pyplot.plot(all_pred_continuous,'r+-', label='predicted')
-pyplot.ylabel('BTUs')
-pyplot.xlabel('Samples')
-pyplot.legend()
-pyplot.savefig('Test Preds.pdf', bbox_inches='tight')
+# pyplot.figure()
+# pyplot.plot(all_y_continuous, 'b*-',label='original')
+# pyplot.plot(all_pred_continuous,'r+-', label='predicted')
+# pyplot.ylabel('BTUs')
+# pyplot.xlabel('Samples')
+# pyplot.legend()
+# pyplot.savefig('Test Preds.pdf', bbox_inches='tight')
