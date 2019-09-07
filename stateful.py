@@ -8,12 +8,19 @@ from pandas import read_pickle
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 from math import sqrt
+import matplotlib
 from matplotlib import pyplot
 import numpy as np
 import repository as rp
+from keras.models import Model
+from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, RepeatVector
+from keras.initializers import glorot_normal
+from keras.optimizers import Adam
+
 
 #read the data set
 dataset = read_pickle("Summer_2019_5min.pkl")
+#subsample it to  30min
 dataset = dataset[dataset.index.minute%30==0]
 
 #remove large outliers
@@ -49,19 +56,19 @@ for i in range(len(outputDFrames)):
     else:
         counteri=counteri+1
 
-#interpolate within each dataFrame missing values 
-for i in range(len(outputDFrames)): 
+#interpolate within each dataFrame missing values
+for i in range(len(outputDFrames)):
     outputDFrames[i]=outputDFrames[i].interpolate(method='linear')
 
 #reorganize data to predict future observation
-for i in range(len(outputDFrames)):    
+for i in range(len(outputDFrames)):
     futureAgg=outputDFrames[i]['TotalE'].shift(-1)
     outputDFrames[i]['TotalE']=futureAgg
     outputDFrames[i] = outputDFrames[i][~np.isnan(outputDFrames[i]['TotalE'])]
 
 #extract input and output variables
 inputArrays,outputArrays=[],[]
-for i in range(len(outputDFrames)):    
+for i in range(len(outputDFrames)):
     inputArray=outputDFrames[i].iloc[:,:-1].values
     outputArray=outputDFrames[i].iloc[:,-1].values
     inputArrays.append(inputArray)
@@ -71,7 +78,7 @@ for i in range(len(outputDFrames)):
 trainpercent=3/4;
 trains_X,tests_X=[],[]
 trains_y,tests_y=[],[]
-for i in range(len(outputDFrames)): 
+for i in range(len(outputDFrames)):
     inputArray=inputArrays[i]
     outputArray=outputArrays[i]
     Notrainingsets=len(inputArray)
@@ -84,7 +91,7 @@ for i in range(len(outputDFrames)):
     trains_y.append(train_y)
     test_y=outputArray[proportion:Notrainingsets]
     tests_y.append(test_y)
-    
+
 #reshaping before training
 halfhours=1
 inputfeatures=4
@@ -109,36 +116,16 @@ for i in tests_y:
     print(i.shape)
 
 
-from keras.models import Model
-from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, TimeDistributed, RepeatVector
-from keras.initializers import glorot_normal
-from keras.optimizers import Adam
-
 #possible regularization strategies#################################
-#regularizers = L1L2(l1=0.0, l2=0.0) #none
-#regularizers =  L1L2(l1=0.01, l2=0.0) #l1
-#regularizers =  L1L2(l1=0.0, l2=0.001) #l2
 regularizers =  L1L2(l1=0.01, l2=0.001)#l1l2
 
 # design network ############################################################
-#Option 1
-input_layer = Input(batch_shape=(batch_size,halfhours,inputfeatures), name='input_layer')
-LSTM_layer = LSTM(5, kernel_initializer='glorot_normal', name='LSTM_layer')(input_layer)
-num_op = outputsequence # ie we want to predict only 1 output
-repeater = RepeatVector(num_op, name='repeater')(LSTM_layer)
-LSTM_layer2 = LSTM(5, kernel_initializer='glorot_normal', name='LSTM_layer2', return_sequences=True)(repeater)
-output_layer = Dense(1, kernel_initializer='glorot_normal',  activation='relu', name='output_layer')(LSTM_layer2)
-#output_layer = TimeDistributed(Dense(outputsequence, kernel_initializer='glorot_normal',  activation='relu'), name='output_layer')(LSTM_layer)
-model = Model(inputs=input_layer, outputs=output_layer)
-model.compile(loss='mae', optimizer='adam')
-
-#Option2 # Lesser params
 input_layer = Input(batch_shape=(batch_size,halfhours,inputfeatures), name='input_layer')
 reshape_layer = Reshape((halfhours*inputfeatures,),name='reshape_layer')(input_layer)
 num_op = outputsequence # ie we want to predict only 1 output
 repeater = RepeatVector(num_op, name='repeater')(reshape_layer)
-LSTM_layer = LSTM(5, kernel_initializer='glorot_normal', name='LSTM_layer', return_sequences=True)(repeater)
-output_layer = Dense(1, kernel_initializer='glorot_normal',  activation='relu', name='output_layer')(LSTM_layer)
+LSTM_layer = LSTM(5, name='LSTM_layer', return_sequences=True, stateful=True, recurrent_regularizer=regularizer)(repeater)
+output_layer = Dense(1, name='output_layer')(LSTM_layer)
 # #output_layer = TimeDistributed(Dense(outputsequence, kernel_initializer='glorot_normal',  activation='relu'), name='output_layer')(LSTM_layer)
 model = Model(inputs=input_layer, outputs=output_layer)
 model.compile(loss='mae', optimizer='adam')
@@ -202,4 +189,4 @@ pyplot.plot(all_pred_continuous,'r+-', label='predicted')
 pyplot.ylabel('BTUs')
 pyplot.xlabel('Samples')
 pyplot.legend()
-pyplot.savefig('Test Preds', bbox_inches='tight')
+pyplot.savefig('Test Preds.pdf', bbox_inches='tight')
