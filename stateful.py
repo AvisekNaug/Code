@@ -100,10 +100,10 @@ outputfeatures=1
 outputsequence = 6
 
 for i in range(len(trains_X)):
-    trains_X[i] = rp.inputreshaper(trains_X[i],halfhours, inputfeatures)#(samplesize,1,4)
+    trains_X[i] = rp.inputreshaper(trains_X[i],halfhours, outputsequence)#(samplesize,1,4)
     trains_y[i] = rp.outputreshaper(trains_y[i], outputsequence,outputfeatures)#(samplesize,6,1)
 for i in range(len(tests_X)):
-    tests_X[i] = rp.inputreshaper(tests_X[i],halfhours, inputfeatures)#(samplesize,1,4)
+    tests_X[i] = rp.inputreshaper(tests_X[i],halfhours, outputsequence)#(samplesize,1,4)
     tests_y[i] = rp.outputreshaper(tests_y[i], outputsequence,outputfeatures)#(samplesize,6,1)
 
 
