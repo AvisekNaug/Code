@@ -132,7 +132,7 @@ model = Model(inputs=input_layer, outputs=output_layer)
 model.compile(loss='mae', optimizer='adam')
 
 # fit network backpropagating the sequences batch wise
-noepochs=5
+noepochs=150
 for i in range(len(trains_X)):
     model.fit(np.array(trains_X[i]), np.array(trains_y[i]), epochs=noepochs, batch_size=batch_size,
      validation_data=(tests_X[i], tests_y[i]) , verbose=2, shuffle=False)
