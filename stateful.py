@@ -120,6 +120,7 @@ for i in tests_y:
 regularizers =  L1L2(l1=0.01, l2=0.001)#l1l2
 
 # design network ############################################################
+batch_size = 1
 input_layer = Input(batch_shape=(batch_size,halfhours,inputfeatures), name='input_layer')
 reshape_layer = Reshape((halfhours*inputfeatures,),name='reshape_layer')(input_layer)
 num_op = outputsequence # ie we want to predict only 1 output
