@@ -268,7 +268,7 @@ def outputreshaper(y,N=6):
 
     # reshaping collated array to (samples, time_steps)
     collatedArray = np.concatenate(totalArray, axis=1)
-    y_reshaped = collatedArray.reshape((collatedArray.shape[0], N))
+    y_reshaped = collatedArray.reshape((collatedArray.shape[0], N, 1))
 
     return y_reshaped
 
