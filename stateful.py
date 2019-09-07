@@ -180,39 +180,65 @@ for i in range(outputfeatures):
 
 #Plotting the pred versus target curve:train
 for i in range(len(train_plot)):
-	matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
-	fig, axs = plt.subplots(outputsequence, 1)
-	for j in range(outputsequence):
-		#plot predicted
-		axs[j,0].plot(train_plot[i][:,j,0],'ro+',label='Actual Energy')
-		#plot target
-		axs[j,0].plot(trains_y[i][:,j,0],'go+',label='Predicted Energy')
-		#Plot Properties
-		axs[j,0].set_title('t+'+str(j+1)+'time step')
-		axs[j,0].xlabel('Time points at 30 mins')
-		axs[j,0].ylabel('Normalized Energy')
-		axs[j,0].grid(which='both',alpha=100)
-		ax.legend('best')
-		axs[j,0].minorticks_on()
-	fig.savefig('Train Energy Comparison on Step t+'+str(i+1)+'.pdf',bbox_inches='tight')
+    matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
+    fig, axs = plt.subplots(outputsequence+1)
+    for j in range(outputsequence):
+        #plot predicted
+        axs[j].plot(train_plot[i][:,j,0],'ro-',label='Predicted Energy')
+        #plot target
+        axs[j].plot(trains_y[i][:,j,0],'go-',label='Actual Energy')
+        #Plot Properties
+        axs[j].set_title('t+'+str(j+1)+'time step')
+        axs[j].set_xlabel('Time points at 30 mins')
+        axs[j].set_ylabel('Normalized Energy')
+        axs[j].grid(which='both',alpha=100)
+        axs[j].legend()
+        axs[j].minorticks_on()
+    axs[j+1].plot(train_plot[i][:,0,0],'ro-',label='Predicted Energy t+1')
+    axs[j+1].plot(train_plot[i][:,1,0],'g*-',label='Predicted Energy t+2')
+    axs[j+1].plot(train_plot[i][:,2,0],'bd-',label='Predicted Energy t+3')
+    axs[j+1].plot(train_plot[i][:,3,0],'mo-',label='Predicted Energy t+4')
+    axs[j+1].plot(train_plot[i][:,4,0],'cd-',label='Predicted Energy t+5')
+    axs[j+1].plot(train_plot[i][:,5,0],'k*-',label='Predicted Energy t+6')
+    axs[j+1].set_title('Energy at 30 minutes differences')
+    axs[j+1].set_xlabel('Time points at 30 mins')
+    axs[j+1].set_ylabel('Predicted Normalized Energy')
+    axs[j+1].grid(which='both',alpha=100)
+    axs[j+1].legend()
+    axs[j+1].minorticks_on()
+
+    fig.savefig('Train Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
 
 #Plotting the pred versus target curve":test
 for i in range(len(test_plot)):
-	matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
-	fig, axs = plt.subplots(outputsequence, 1)
-	for j in range(outputsequence):
-		#plot predicted
-		axs[j,0].plot(test_plot[i][:,j,0],'ro+',label='Actual Energy')
-		#plot target
-		axs[j,0].plot(tests_y[i][:,j,0],'go+',label='Predicted Energy')
-		#Plot Properties
-		axs[j,0].set_title('t+'+str(j+1)+'time step')
-		axs[j,0].xlabel('Time points at 30 mins')
-		axs[j,0].ylabel('Normalized Energy')
-		axs[j,0].grid(which='both',alpha=100)
-		ax.legend('best')
-		axs[j,0].minorticks_on()
-	fig.savefig('Test Energy Comparison on Step t+'+str(i+1)+'.pdf',bbox_inches='tight')
+    matplotlib.rcParams['figure.figsize'] = [20.0, 42.0]
+    fig, axs = plt.subplots(outputsequence+1)
+    for j in range(outputsequence):
+        #plot predicted
+        axs[j].plot(test_plot[i][:,j,0],'ro-',label='Predicted Energy')
+        #plot target
+        axs[j].plot(tests_y[i][:,j,0],'go-',label='Actual Energy')
+        #Plot Properties
+        axs[j].set_title('t+'+str(j+1)+'time step')
+        axs[j].set_xlabel('Time points at 30 mins')
+        axs[j].set_ylabel('Normalized Energy')
+        axs[j].grid(which='both',alpha=100)
+        axs[j].legend()
+        axs[j].minorticks_on()
+    axs[j+1].plot(test_plot[i][:,0,0],'ro-',label='Predicted Energy t+1')
+    axs[j+1].plot(test_plot[i][:,1,0],'g*-',label='Predicted Energy t+2')
+    axs[j+1].plot(test_plot[i][:,2,0],'bd-',label='Predicted Energy t+3')
+    axs[j+1].plot(test_plot[i][:,3,0],'mo-',label='Predicted Energy t+4')
+    axs[j+1].plot(test_plot[i][:,4,0],'cd-',label='Predicted Energy t+5')
+    axs[j+1].plot(test_plot[i][:,5,0],'k*-',label='Predicted Energy t+6')
+    axs[j+1].set_title('Energy at 30 minutes differences')
+    axs[j+1].set_xlabel('Time points at 30 mins')
+    axs[j+1].set_ylabel('Predicted Normalized Energy')
+    axs[j+1].grid(which='both',alpha=100)
+    axs[j+1].legend()
+    axs[j+1].minorticks_on()
+
+    fig.savefig('Test Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
 
 
 
