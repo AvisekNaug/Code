@@ -7,17 +7,9 @@ from pandas import datetime
 from pandas import read_pickle
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import LSTM
-from keras.models import model_from_json
-from keras.regularizers import L1L2
 from math import sqrt
 from matplotlib import pyplot
 import numpy as np
-import sys
-sys.path.insert(0, 'D:\\Programming\\research\\LSTM\\Buildings\\Repo')
 import repository as rp
 
 #read the data set
@@ -48,7 +40,6 @@ dataset = DataFrame(totalvect, columns=dataset.columns, index=dataset.index)
 #dataset=dataset.drop(['HeatE'], axis=1)
 
 #extract sequences larger than L samples
-#sequencelength=2000 #minimum length of outliers admitted
 outputDFrames=rp.subsequencing(dataset)#rp.continuous_sequencesnan(dataset,sequencelength)
 minimum_seq_length=48 #one day
 counteri=0
@@ -95,22 +86,33 @@ for i in range(len(outputDFrames)):
     tests_y.append(test_y)
     
 #reshaping before training
-hours=1
+halfhours=1
 inputfeatures=4
 outputfeatures=1
-delays=np.array([1])
-input_features=inputfeatures+delays-outputfeatures
+outputsequence = 6
 
-# reshape input to be 3D [samples, timesteps, features]
 for i in range(len(trains_X)):
-    trains_X[i]= trains_X[i].reshape((trains_X[i].shape[0], hours, input_features[0]))
-    if trains_y[i].size ==1:
-        trains_y[i]=[trains_y[i],] 
+    trains_X[i] = rp.inputreshaper(trains_X[i],halfhours, outputsequence)#(samplesize,1,4)
+    trains_y[i] = rp.outputreshaper(trains_y[i], outputsequence)#(samplesize,6)
 for i in range(len(tests_X)):
-    tests_X[i]= tests_X[i].reshape((tests_X[i].shape[0], hours, input_features[0]))
-    
+    tests_X[i] = rp.inputreshaper(tests_X[i],halfhours, outputsequence)#(samplesize,1,4)
+    tests_y[i] = rp.outputreshaper(tests_y[i], outputsequence)#(samplesize,6)
+
+
 for i in trains_X:
     print(i.shape)
+for i in trains_y:
+    print(i.shape)
+for i in tests_X:
+    print(i.shape)
+for i in tests_y:
+    print(i.shape)
+
+
+from keras.models import Model
+from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, TimeDistributed, RepeatVector
+from keras.initializers import glorot_normal
+from keras.optimizers import Adam
 
 #possible regularization strategies#################################
 #regularizers = L1L2(l1=0.0, l2=0.0) #none
@@ -119,12 +121,27 @@ for i in trains_X:
 regularizers =  L1L2(l1=0.01, l2=0.001)#l1l2
 
 # design network ############################################################
-batch_size=1
-model = Sequential()
-model.add(LSTM(5, batch_input_shape=(batch_size, trains_X[0].shape[1], trains_X[0].shape[2]), stateful=True, recurrent_regularizer=regularizers))
-model.add(Dense(1))
+#Option 1
+input_layer = Input(batch_shape=(batch_size,halfhours,inputfeatures), name='input_layer')
+LSTM_layer = LSTM(5, kernel_initializer='glorot_normal', name='LSTM_layer')(input_layer)
+num_op = outputsequence # ie we want to predict only 1 output
+repeater = RepeatVector(num_op, name='repeater')(LSTM_layer)
+LSTM_layer2 = LSTM(5, kernel_initializer='glorot_normal', name='LSTM_layer2', return_sequences=True)(repeater)
+output_layer = Dense(1, kernel_initializer='glorot_normal',  activation='relu', name='output_layer')(LSTM_layer2)
+#output_layer = TimeDistributed(Dense(outputsequence, kernel_initializer='glorot_normal',  activation='relu'), name='output_layer')(LSTM_layer)
+model = Model(inputs=input_layer, outputs=output_layer)
 model.compile(loss='mae', optimizer='adam')
 
+#Option2 # Lesser params
+input_layer = Input(batch_shape=(batch_size,halfhours,inputfeatures), name='input_layer')
+reshape_layer = Reshape((halfhours*inputfeatures,),name='reshape_layer')(input_layer)
+num_op = outputsequence # ie we want to predict only 1 output
+repeater = RepeatVector(num_op, name='repeater')(reshape_layer)
+LSTM_layer = LSTM(5, kernel_initializer='glorot_normal', name='LSTM_layer', return_sequences=True)(repeater)
+output_layer = Dense(1, kernel_initializer='glorot_normal',  activation='relu', name='output_layer')(LSTM_layer)
+# #output_layer = TimeDistributed(Dense(outputsequence, kernel_initializer='glorot_normal',  activation='relu'), name='output_layer')(LSTM_layer)
+model = Model(inputs=input_layer, outputs=output_layer)
+model.compile(loss='mae', optimizer='adam')
 
 # fit network backpropagating the sequences batch wise
 noepochs=150
