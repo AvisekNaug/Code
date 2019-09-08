@@ -175,7 +175,7 @@ for i in range(outputfeatures):
 		cvrmse = 100*(rmse/np.mean(train_target[:,j,i]))
 		mae = mean_absolute_error(train_pred[:,j,i],train_target[:,j,i])
 		file=  open(str(timegap)+'min Results_File.txt', 'a')
-		file.write('Time Step {}: Train RMSE={} |Train CVRMES={} |Train MAE={} \n'.format(j+1,rmse,cvrmse,mae))
+		file.write('Time Step {}: Train RMSE={} |Train CVRMSE={} |Train MAE={} \n'.format(j+1,rmse,cvrmse,mae))
 		file.close()
 
 		#Calculate test error
@@ -183,7 +183,7 @@ for i in range(outputfeatures):
 		cvrmse = 100*(rmse/np.mean(test_target[:,j,i]))
 		mae = mean_absolute_error(test_pred[:,j,i],test_target[:,j,i])
 		file=  open(str(timegap)+'min Results_File.txt', 'a')
-		file.write('Time Step {}: Test RMSE={} |Test CVRMES={} |Test MAE={} \n'.format(j+1,rmse,cvrmse,mae))
+		file.write('Time Step {}: Test RMSE={} |Test CVRMSE={} |Test MAE={} \n'.format(j+1,rmse,cvrmse,mae))
 		file.close()
 
 #Plotting the pred versus target curve:train
