@@ -18,7 +18,7 @@ from keras.initializers import glorot_normal
 from keras.optimizers import Adam
 from keras.regularizers import L1L2
 import sys
-
+#giving the option of coosing time gap
 timegap = int(sys.argv[1])
 #read the data set
 dataset = read_pickle("Summer_2019_5min.pkl")
