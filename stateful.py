@@ -16,6 +16,7 @@ from keras.models import Model
 from keras.layers import Input, Dense, LSTM, Concatenate, RepeatVector, RepeatVector, Reshape
 from keras.initializers import glorot_normal
 from keras.optimizers import Adam
+from keras.callbacks import TensorBoard
 from keras.regularizers import L1L2
 import sys
 #giving the option of coosing time gap
@@ -101,7 +102,7 @@ for i in range(len(outputDFrames)):
 halfhours=1
 inputfeatures=4
 outputfeatures=1
-outputsequence = 6
+outputsequence = 1
 
 for i in range(len(trains_X)):
     trains_X[i] = rp.inputreshaper(trains_X[i],halfhours, outputsequence)#(samplesize,1,4)
@@ -135,17 +136,20 @@ output_layer = Dense(1, name='output_layer')(LSTM_layer)
 model = Model(inputs=input_layer, outputs=output_layer)
 model.compile(loss='mae', optimizer='adam')
 
+#design callbacks
+tbCallBack = TensorBoard(log_dir='./loginfo', batch_size=batch_size, histogram_freq=1, write_graph=False, write_images=False, write_grads=True)
+
 # fit network backpropagating the sequences batch wise
 noepochs=150
 for i in range(len(trains_X)):
     model.fit(np.array(trains_X[i]), np.array(trains_y[i]), epochs=noepochs, batch_size=batch_size,
-     validation_data=(tests_X[i], tests_y[i]) , verbose=2, shuffle=False)
+     validation_data=(tests_X[i], tests_y[i]) , verbose=2, shuffle=False, callbacks=[tbCallBack])
     model.reset_states()
 
 #saving the model
-#rp.save_model(model)
+rp.save_model(model)
 
-##testing with the test and entire dataset prediction##############################################
+##testing with the test and train dataset prediction##############################################
 train_plot = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
 test_plot = []#each element has (samplesize, timestep=outputsequence=6, feature=1)
 model.reset_states()
@@ -165,6 +169,8 @@ train_target= np.concatenate(trains_y,axis=0)
 test_pred = np.concatenate(test_plot,axis=0)
 test_target = np.concatenate(tests_y,axis=0)
 
+file=  open(str(timegap)+'min Results_File.txt','w')
+file.close()
 
 #generalized calc for 3d arrays
 for i in range(outputfeatures):
@@ -203,11 +209,6 @@ for i in range(len(train_plot)):
         axs[j].legend()
         axs[j].minorticks_on()
     axs[j+1].plot(train_plot[i][:,0,0],'ro-',label='Predicted Energy t+1')
-    axs[j+1].plot(train_plot[i][:,1,0],'g*-',label='Predicted Energy t+2')
-    axs[j+1].plot(train_plot[i][:,2,0],'bd-',label='Predicted Energy t+3')
-    axs[j+1].plot(train_plot[i][:,3,0],'mo-',label='Predicted Energy t+4')
-    axs[j+1].plot(train_plot[i][:,4,0],'cd-',label='Predicted Energy t+5')
-    axs[j+1].plot(train_plot[i][:,5,0],'k*-',label='Predicted Energy t+6')
     axs[j+1].set_title('Energy at {} minutes differences'.format(timegap))
     axs[j+1].set_xlabel('Time points at {} mins'.format(timegap))
     axs[j+1].set_ylabel('Predicted Normalized Energy')
@@ -234,11 +235,6 @@ for i in range(len(test_plot)):
         axs[j].legend()
         axs[j].minorticks_on()
     axs[j+1].plot(test_plot[i][:,0,0],'ro-',label='Predicted Energy t+1')
-    axs[j+1].plot(test_plot[i][:,1,0],'g*-',label='Predicted Energy t+2')
-    axs[j+1].plot(test_plot[i][:,2,0],'bd-',label='Predicted Energy t+3')
-    axs[j+1].plot(test_plot[i][:,3,0],'mo-',label='Predicted Energy t+4')
-    axs[j+1].plot(test_plot[i][:,4,0],'cd-',label='Predicted Energy t+5')
-    axs[j+1].plot(test_plot[i][:,5,0],'k*-',label='Predicted Energy t+6')
     axs[j+1].set_title('Energy at {} minutes differences'.format(timegap))
     axs[j+1].set_xlabel('Time points at {} mins'.format(timegap))
     axs[j+1].set_ylabel('Predicted Normalized Energy')
@@ -248,12 +244,3 @@ for i in range(len(test_plot)):
 
     fig.savefig(str(timegap)+'minutes Test Energy Comparison on Sequence'+str(i+1)+'.pdf',bbox_inches='tight')
 
-
-
-# pyplot.figure()
-# pyplot.plot(all_y_continuous, 'b*-',label='original')
-# pyplot.plot(all_pred_continuous,'r+-', label='predicted')
-# pyplot.ylabel('BTUs')
-# pyplot.xlabel('Samples')
-# pyplot.legend()
-# pyplot.savefig('Test Preds.pdf', bbox_inches='tight')

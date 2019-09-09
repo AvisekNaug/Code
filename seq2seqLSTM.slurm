@@ -6,10 +6,10 @@
 #SBATCH --ntasks=2
 #SBATCH --cpus-per-task=1 #no of cpu cores per task
 #SBATCH --mem=64G #ram per node
-#SBATCH --mem-per-cpu=64G #ram per cpu core #--time=2-00:00:00
+#SBATCH --mem-per-cpu=64G #ram per cpu core #--time=2-00:00:00--partition=debug
 #SBTACH --output=job_output1.out
 #SBATCH --job-name=seq2seqLSTM
-#SBATCH --time=8:00:00
+#SBATCH --time=10:00:00
 
 source /home/nauga/anaconda3/bin/activate SmartBuildings
 

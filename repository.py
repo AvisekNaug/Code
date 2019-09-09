@@ -250,7 +250,10 @@ def inputreshaper(X, time_steps=1,outputsequence=6):
     # reshaping collated array to (samples, time_steps, dimensions)
     collatedArray = np.concatenate(totalArray, axis=1)
     X_reshaped = collatedArray.reshape((collatedArray.shape[0], time_steps, n))
-    X_reshaped = X_reshaped[0:1-outputsequence,:,:]
+    if outputsequence==1:
+        X_reshaped = X_reshaped[:,:,:]
+    else:
+        X_reshaped = X_reshaped[0:1-outputsequence,:,:]
     #^^We are removing last outputsequence-1 data due to predicting sequence of length outputsequence
 
     return X_reshaped
