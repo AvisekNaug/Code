@@ -1,0 +1,4 @@
+*.vampire
+loginfo/
+__pycache__/
+*.out
